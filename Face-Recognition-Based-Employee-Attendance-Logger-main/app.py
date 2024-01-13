@@ -20,6 +20,7 @@ import plotly
 import plotly.express as px
 import json
 import chardet
+#import pyarabic
 
 app = Flask(__name__)
 
@@ -38,6 +39,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 mail_ = Mail(app)
+
 
 
 @login_manager.user_loader
@@ -84,6 +86,8 @@ def index():
     except:
         pass
     return render_template('index.html')
+
+
 
 
 # user login
@@ -291,10 +295,11 @@ def update():
     except:
         pass
     # update in attendance records
-    df = pd.read_csv("static/records.csv")
+    df = pd.read_csv("static/records.csv", encoding='ISO-8859-1')
     df.loc[(df["Id"] == id) & (df['Status'] == 'On Service'), ['Name', 'Department']] = [emp.name, emp.department]
     df.to_csv("static/records.csv", index=False)
     return redirect("/add")
+
 
 
 # generating frames for capturing photo ny detecting smile
@@ -407,6 +412,7 @@ def gen_frames():
     oldIds = []
     camera = cv2.VideoCapture(0)
 
+
     # functin to mark attendance
     def markEntry(id):
         with app.app_context():
@@ -460,8 +466,9 @@ def gen_frames():
                     with app.app_context():
                         emp = employee.query.filter_by(id=Id).first()
                         cv2.putText(img, Id, (x1, y2 + 25), cv2.FONT_HERSHEY_TRIPLEX, 0.8, (0, 255, 0), 2)
-                        cv2.putText(img, emp.name, (x1, y2 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.8, (0, 255, 0), 2)
+                        cv2.putText(img, emp.name, (x1, y2 + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
                         cv2.rectangle(img, (x1, y1), (x2, y2 - 4), (0, 255, 0), 2)
+
                         markEntry(Id)
                     # below two lines can also be used instead of above two, text look better with putBText
                     # ps.putBText(img, emp.name, text_offset_x= x1+5, text_offset_y=y2 +45, vspace=5,hspace=5, font_scale=1, background_RGB=(0,255,0), text_RGB=(255,255,255), thickness=2, alpha=0.5)
@@ -517,6 +524,7 @@ def downloadToday():
     # extracting todays' records only
     df = pd.read_csv("static/records.csv", encoding="ISO-8859-1")
     df = df[df['Date'] == datetime.now().strftime("%d-%m-%Y")]
+    #df = pd.read_csv("static/todayAttendance.csv", encoding="ISO-8859-1")
     df.to_csv("static/todayAttendance.csv", index=False)
     return send_file('static/todayAttendance.csv', as_attachment=True)
 
@@ -526,7 +534,6 @@ def downloadToday():
 @login_required
 def resetToday():
     df = pd.read_csv("static/records.csv", encoding='latin-1')
-
     df = df[df['Date'] != datetime.now().strftime("%d-%m-%Y")]
     df.to_csv("static/records.csv", index=False)
     return redirect('/AttendanceSheet')
@@ -561,8 +568,8 @@ def stats():
 
     # today's attendance dept wise
     fig1 = px.bar(attendance, x=attendance.index, y=attendance.columns, barmode='group',
-                  labels={'value': 'No of Employees'},
-                  title='Department Wise today\'s Attendance', color_discrete_sequence=px.colors.qualitative.T10,
+                  labels={'value': 'عدد السجناء '},
+                  title='قسم الحضور  اليوم', color_discrete_sequence=px.colors.qualitative.T10,
                   template='presentation')
 
     # department wise attendance in percentage&counts
@@ -575,7 +582,7 @@ def stats():
     # last 7 working days' attendance
     dates = df['Date'].unique()[-7:]
     df_last7 = df[df['Date'].isin(dates)]
-    fig3 = px.histogram(df_last7, x='Date', color="Department", title='Date & Department wise Attendance',
+    fig3 = px.histogram(df_last7, x='Date', color="Department", title='التاريخ والحضور حسب القسم',
                         color_discrete_sequence=px.colors.qualitative.T10, template='presentation')
 
     # individual attendance percentage
@@ -594,12 +601,12 @@ def stats():
                                db.sort_values(by='Attendance(%)', ascending=False, kind="mergesort").values.tolist()),
                            len=len)
 
-
+bot_responses = {}
 @app.route('/get')
 def get_bot_response():
     userText = request.args.get('msg')
     # fetch ans corresponding to given question, bot_responses is a global variable declared in helpBot route
-    bot_response = bot_responses.get(userText, "Sorry, Can't help with it :(")
+    bot_response = bot_responses.get(userText, "اعتذر لم استطع فهمك  :(")
     return bot_response
 
 
@@ -615,5 +622,4 @@ def helpBot():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=False, host='0.0.0.0', port=8000)
 
