@@ -1,31 +1,42 @@
 # -*- coding: utf-8 -*-
 # تعيين الترميز لضمان التعامل الصحيح مع النصوص باللغة العربية
 
-from random import randint  # استيراد وحدة randint من مكتبة random لإنشاء أرقام عشوائية
-from flask import Flask, render_template, request, Response, redirect, send_file, session, url_for  # استيراد مكتبات Flask لبناء تطبيق الويب
-from flask_login import LoginManager, login_required, UserMixin, current_user, login_user, logout_user  # استيراد مكتبة Flask-Login لإدارة عمليات تسجيل الدخول
-from flask_mail import Mail, Message  # استيراد مكتبة Flask-Mail لإرسال البريد الإلكتروني
-from flask_sqlalchemy import SQLAlchemy  # استيراد مكتبة Flask-SQLAlchemy للتفاعل مع قاعدة البيانات
-import os  # استيراد وحدة os للتفاعل مع نظام التشغيل
+# مكتبات الـ MVC Framework
+from flask import Flask, render_template, request, Response, redirect, send_file, session, url_for, flash
+from flask_login import LoginManager, login_required, UserMixin, current_user, login_user, logout_user
+from flask_mail import Mail, Message
+from flask_sqlalchemy import SQLAlchemy
+
+# مكتبات التعامل مع الصور والفيديو
 import cv2  # استيراد OpenCV لمعالجة الصور وتحليل الوجوه
-import numpy as np  # استيراد NumPy للتعامل مع البيانات بشكل علمي
-import csv  # استيراد وحدة csv للتعامل مع ملفات CSV
 import dlib  # استيراد مكتبة dlib للكشف عن الوجوه واستخدام نماذج الكشف
 import face_recognition  # استيراد face_recognition لتقنية التعرف على الوجه
 from deepface import DeepFace  # استيراد DeepFace لتسهيل تنفيذ عمليات التعرف على الوجه
 from imutils import face_utils  # استيراد face_utils من مكتبة imutils لمساعدة في تيسير عمليات معالجة الوجه
-from datetime import datetime  # استيراد datetime للتعامل مع التواريخ والأوقات
-import timeit  # استيراد timeit لقياس الوقت
-import time  # استيراد وحدة الوقت للتحكم في التوقيت
+
+# مكتبات التعامل مع البيانات والرسوم البيانية
+import numpy as np  # استيراد NumPy للتعامل مع البيانات بشكل علمي
+import csv  # استيراد وحدة csv للتعامل مع ملفات CSV
 import pandas as pd  # استيراد pandas للتعامل مع البيانات في هيكل DataFrame
 import plotly  # استيراد plotly لرسم الرسوم البيانية التفاعلية
 import plotly.express as px  # استيراد plotly.express لرسم الرسوم البيانية بشكل مبسط
 import json  # استيراد json للتعامل مع بيانات JSON
-from flask import request  # استيراد request من Flask للتفاعل مع طلبات الويب
+
+# مكتبات الوقت والقياس
+from datetime import datetime  # استيراد datetime للتعامل مع التواريخ والأوقات
+import timeit  # استيراد timeit لقياس الوقت
+import time  # استيراد وحدة الوقت للتحكم في التوقيت
+
+# مكتبات مساعدة
+import os  # استيراد وحدة os للتفاعل مع نظام التشغيل
 import arabic_reshaper  # استيراد arabic_reshaper لإعادة تشكيل النصوص العربية
 from bidi.algorithm import get_display  # استيراد get_display لدعم الكتابة من اليمين إلى اليسار
 from babel import Locale  # استيراد Locale لتعيين تفاصيل اللغة
 from PIL import ImageFont, Image, ImageDraw  # استيراد مكتبة PIL للتعامل مع الصور والنصوص
+
+# مكتبات مساعدة إضافية
+from random import randint  # استيراد وحدة randint من مكتبة random لإنشاء أرقام عشوائية
+
 
 app = Flask(__name__)
 
@@ -34,8 +45,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///EmployeeDB.db"  # تحديد موقع قاعدة البيانات ونوعها (SQLite في هذه الحالة)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # تعطيل تتبع التعديلات لتجنب إشعارات غير ضرورية
 app.config['SECRET_KEY'] = 'mysecretkey'  # تعيين مفتاح سري لتوقيع الجلسات في التطبيق
-db = SQLAlchemy(app)  # إعداد كائن قاعدة البيانات باستخدام Flask-SQLAlchemy
 
+
+db = SQLAlchemy(app)  # إعداد كائن قاعدة البيانات باستخدام Flask-SQLAlchemy
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # تحديد خادم البريد الإلكتروني
 app.config['MAIL_PORT'] = 587  # تحديد منفذ البريد الإلكتروني
 app.config['MAIL_USE_TLS'] = True  # تمكين استخدام TLS لتشفير الاتصال
@@ -47,14 +59,18 @@ login_manager.login_view = 'login'  # تحديد عرض تسجيل الدخول
 mail_ = Mail(app)  # إعداد كائن البريد الإلكتروني باستخدام Flask-Mail
 
 # تحميل ملف توقع الشكل
-shape_predictor_path = "templates/shape_predictor_68_face_landmarks.dat"
+shape_predictor_path = 'templates/shape_predictor_68_face_landmarks.dat'
 predictor = dlib.shape_predictor(shape_predictor_path)
 
 # تحميل ملف نموذج التعرف على الوجه
-face_recognition_model_path = "templates/dlib_face_recognition_resnet_model_v1.dat"
+face_recognition_model_path = 'templates/dlib_face_recognition_resnet_model_v1.dat'
 face_recognition_model = dlib.face_recognition_model_v1(face_recognition_model_path)
 
+faceCascade = cv2.CascadeClassifier('templates/frontalface.xml')
 
+
+# تحديد مسار مجلد الصور التدريبية
+path = 'static/TrainingImages'
 
 file_paths = ['static/records.csv', 'static/todayAttendance.csv']
 
@@ -62,6 +78,7 @@ file_paths = ['static/records.csv', 'static/todayAttendance.csv']
 @login_manager.user_loader
 def load_user(user_id):
     return users.query.get(user_id)
+
 
 # نموذج لقاعدة بيانات الموظفين
 class employee(db.Model):
@@ -82,14 +99,19 @@ class users(db.Model, UserMixin):
     mail = db.Column(db.String(80), nullable=True)
     password = db.Column(db.String(80), nullable=False)
     dateCreated = db.Column(db.DateTime, default=datetime.utcnow)
-
+    role = db.Column(db.String(20), nullable=True)
     def __repr__(self):
         return '<User {}>'.format(self.username)
 
-# تحديد مسار مجلد الصور التدريبية
-path = 'static/TrainingImages'
-# الكود التالي يعرف مسارات ووظائف في تطبيق ويب Flask. لنوفر تعليقات لكل قسم:
 
+# الكود التالي يعرف مسارات ووظائف في تطبيق ويب Flask:
+
+@app.route('/admin-only')
+@login_required
+def admin_only_route():
+    if current_user.role != 'admin':
+        # إعادة توجيه المستخدمين غير الأدمن إلى صفحة أخرى أو عرض رسالة خطأ
+        return redirect(url_for('index'))
 # هذا المسار يتعامل مع الصفحة الرئيسية للتطبيق.
 @app.route('/')
 def index():
@@ -110,21 +132,40 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # استرجاع اسم المستخدم وكلمة المرور من إرسال النموذج
         username = request.form['username']
         password = request.form['password']
-        # استعلام قاعدة البيانات للعثور على مستخدم بالاسم المستخدم المقدم
         user = users.query.filter_by(username=username).first()
-        # التحقق مما إذا كان المستخدم موجودًا وكلمة المرور المقدمة صحيحة
         if user is not None and user.password == password:
-            # إذا كانت بيانات الاعتماد صحيحة، قم بتسجيل دخول المستخدم وإعادة توجيهه إلى الصفحة الرئيسية
-            login_user(user)
-            return redirect('/')
+            otp = randint(100000, 999999)  # توليد رمز OTP
+            sendResetMail(user.mail, otp)  # إرسال رمز OTP إلى البريد الإلكتروني للمستخدم
+            session['user_id_temp'] = user.id  # حفظ معرف المستخدم مؤقتًا
+            session['otp'] = otp  # حفظ الرمز المؤقت في الجلسة
+            return redirect(url_for('verifyOTP'))  # توجيه المستخدم إلى صفحة التحقق من OTP
         else:
-            # إذا كانت بيانات الاعتماد غير صحيحة، قم بعرض صفحة تسجيل الدخول مع علامة "incorrect"
             return render_template('login.html', incorrect=True)
-    # إذا كانت طريقة الطلب هي GET، قم ببساطة بعرض صفحة تسجيل الدخول
     return render_template('login.html')
+def sendResetMail(mail, otp):
+    msg = Message('إعادة تسجيل ', recipients=[mail], sender='your_email@example.com')
+    msg.body = f'''كلمة المرور الخاصة بك هي {str(otp)}. '''
+    mail_.send(msg)
+
+
+# إضافة مسار للتحقق من صحة الرمز المؤقت
+@app.route('/verifyOTP', methods=['GET', 'POST'])
+def verifyOTP():
+    if request.method == 'POST':
+        user_otp = int(request.form['otp'])
+        if 'otp' in session and session['otp'] == user_otp:
+            user_id = session.pop('user_id_temp', None)
+            user = users.query.filter_by(id=user_id).first()
+            if user:
+                login_user(user)  # تسجيل دخول المستخدم
+                return redirect('/')  # توجيه المستخدم إلى الصفحة الرئيسية
+            else:
+                return redirect(url_for('login'))
+        else:
+            return render_template('OTP.html', incorrect=True)
+    return render_template('OTP.html')
 
 # هذا المسار يتعامل مع خروج المستخدم. يتطلب من المستخدم أن يكون قد قام بتسجيل الدخول.
 @app.route('/logout', methods=['GET', 'POST'])
@@ -135,14 +176,17 @@ def logout():
     return redirect('/')
 
 # هذه الوظيفة مسؤولة عن إرسال بريد إلكتروني إلى مستخدم/موظف بعد التسجيل الناجح.
-def send_mail(email, text):
-    # إنشاء كائن Message بالعنوان، المستلمين، المرسل، والنص
-    msg = Message('تم التسجيل بنجاح', recipients=[email], sender='alfifi115@gmail.com', body=text)
-    # إرسال البريد الإلكتروني باستخدام كائن mail_
-    mail_.send(msg)
+
 # تسجيل المستخدم
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.role != 'admin':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+
+        # إعادة توجيه المستخدمين الذين ليسوا أدمن
+        return redirect(url_for('index'))
+
+
     if request.method == 'POST':
         # استرجاع بيانات التسجيل من إرسال النموذج
         id = request.form['id']
@@ -170,81 +214,28 @@ def register():
 
             # إرسال بريد إلكتروني للمستخدم بعد التسجيل الناجح
             msg = f'''مرحبًا {new_user.name}
-لقد تم إنشاء حساب المالك الخاص بك بنجاح
+لقد تم إنشاء حساب جديد
 
 شكرًا لك.
 '''
-            send_mail(new_user.mail, msg)
+            sendResetMail(new_user.mail, msg)
 
             # إعادة توجيه المستخدم إلى صفحة تسجيل الدخول بعد التسجيل الناجح
             return render_template('login.html', registered=True)
 
     # إذا كانت طريقة الطلب هي GET، عرض صفحة التسجيل
     return render_template('signup.html')
-# طلب إعادة تعيين كلمة مرور المستخدم
-@app.route('/reset_request', methods=['GET', 'POST'])
-def reset_request():
-    if request.method == 'POST':
-        # استرجاع عنوان البريد الإلكتروني من إرسال النموذج
-        email = request.form['mail']
-        # البحث عن مستخدم بواسطة البريد الإلكتروني المقدم
-        user = users.query.filter_by(mail=email).first()
 
-        # إذا كان هناك مستخدم بالبريد الإلكتروني المحدد، قم بإنشاء رمز مرور مؤقت وإرساله إلى المستخدم
-        if user:
-            otp = randint(000000, 999999)
-            sendResetMail(email, otp)
-            # حفظ معرف المستخدم والرمز المؤقت في جلسة الاستخدام
-            session['id'] = user.id
-            session['otp'] = otp
-            return render_template('OTP.html')
-        else:
-            # إذا لم يكن هناك مستخدم بالبريد الإلكتروني المحدد، عرض صفحة طلب إعادة التعيين مع علامة "incorrect"
-            return render_template('resetRequest.html', incorrect=True)
-    # إذا كانت طريقة الطلب هي GET، عرض صفحة طلب إعادة التعيين
-    return render_template('resetRequest.html')
-
-
-# وظيفة لإرسال بريد إلكتروني لإعادة تعيين كلمة المرور
-def sendResetMail(mail, otp):
-    msg = Message('إعادة تعيين كلمة المرور', recipients=[mail], sender='alfifi115@gmail.com')
-    msg.body = f'''كلمة المرور الخاصة بك هي {str(otp)}. إذا لم ترسل طلب إعادة تعيين كلمة المرور، يرجى تجاهل هذه الرسالة'''
-    mail_.send(msg)
-
-
-# التحقق من صحة الرمز المؤقت
-@app.route('/verifyOTP', methods=['GET', 'POST'])
-def verifyOTP():
-    # إذا تطابق الرمز المؤقت المرسل مع الرمز المدخل من قبل المستخدم، قم بتوجيهه إلى صفحة إعادة تعيين كلمة المرور
-    otp2 = int(request.form['otp'])
-    if session['otp'] == otp2:
-        return render_template('resetPassword.html')
-    else:
-        # إذا كان الرمز المؤقت غير متطابق، عرض صفحة إدخال الرمز مع علامة "incorrect"
-        return render_template('OTP.html', incorrect=True)
-
-
-# إعادة تعيين كلمة المرور للمستخدم
-@app.route('/resetPass', methods=['GET', 'POST'])
-def resetPass():
-    # استرجاع كلمتي المرور من إرسال النموذج
-    pw1 = request.form['pass1']
-    pw2 = request.form['pass2']
-
-    # إذا كانت كلمتي المرور متطابقتين ولهما طول لا يقل عن 8، قم بتغيير كلمة المرور للمستخدم
-    if pw1 == pw2 and len(pw1) >= 8:
-        user = users.query.filter_by(id=session['id']).first()
-        user.password = pw1
-        db.session.commit()
-        # عرض صفحة تسجيل الدخول مع علامة "reseted" بعد إعادة تعيين كلمة المرور بنجاح
-        return render_template('login.html', reseted=True)
-    else:
-        # إذا لم تكن كلمتي المرور متطابقتين أو لم يكن لديهما طول 8، عرض صفحة إعادة تعيين كلمة المرور مع علامة "incorrect"
-        return render_template('resetPassword.html', incorrect=True)
 # إضافة موظف جديد إلى قاعدة بيانات الموظفين
 @app.route("/add", methods=['GET', 'POST'])
 @login_required
 def add():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
+
     try:
         # إلغاء تشغيل كائن التقاط الكاميرا الثاني (cap2) إذا كان قائمًا
         cap2.release()
@@ -269,13 +260,13 @@ def add():
             db.session.commit()
 
             fileNm = id + '.jpg'
-            msg = f'''مرحبًا {name},
+            msg = f'''مرحبًا {dept},
 
-مرحبًا بك في المنظمة. لقد تم تسجيلك بنجاح في قاعدة بيانات الموظفين.
+. لقد تم تسجيلك بنجاح في قاعدة بيانات الموظفين.
 
 شكرًا لك.
 مسجل حضور الموظف القائم على التعرف على الوجه'''
-            send_mail(mail, msg)
+            sendResetMail(mail, msg)
 
             try:
                 # محاولة حفظ الصورة إذا تم تحميلها
@@ -303,6 +294,11 @@ def add():
 @app.route("/delete/<string:id>")
 @login_required
 def delete(id):
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # حذف من قاعدة البيانات
     emp = employee.query.filter_by(id=id).first()
     db.session.delete(emp)
@@ -316,7 +312,7 @@ def delete(id):
         pass
 
     # تحديث حالة الموظف كمُنهي في سجلات الحضور للموظف المحذوف
-    df = pd.read_csv("static/records.csv")
+    df = pd.read_csv("static/records.csv", encoding='ISO-8859-1')
     df.loc[df["Id"] == id, "Status"] = "Terminated"
     df.to_csv("static/records.csv", index=False)
 
@@ -327,6 +323,11 @@ def delete(id):
 @app.route("/update", methods=['GET', 'POST'])
 @login_required
 def update():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     id = request.form['id']
     emp = employee.query.filter_by(id=id).first()
 
@@ -356,73 +357,78 @@ def update():
     return redirect("/add")
 
 
-# إنشاء إطارات لالتقاط الصورة عن طريق اكتشاف الابتسامة
-# إنشاء إطارات لالتقاط الصورة عن طريق اكتشاف الابتسامة
-
-
-    # generating frames for capturing photo ny detecting smile
+# إنشاء إطارات لالتقاط الصورة
 def gen_frames_takePhoto():
-        start = timeit.default_timer()
-        flag = False
-        num = -1
+    start = timeit.default_timer()
+    flag = False
+    num = -1
 
-        while True:
-            ret, frame = cap2.read()  # read the camera feed
-            if ret:
-                if num == 0:
-                    # if the numbering for capturing phto has completed then release camera and save the image
-                    global pic
-                    pic = frame
-                    ret, buffer = cv2.imencode('.jpg', frame)
-                    frame = buffer.tobytes()
-                    # playsound("static/cameraSound.wav")
-                    yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-                    cap2.release()
-                    break
+    while True:
+        ret, frame = cap2.read()  # قراءة الإطار من الكاميرا
+        if ret:
+            # تغيير حجم الإطار وتحويله إلى اللون الرمادي
+            frameS = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+            frameS = cv2.cvtColor(frameS, cv2.COLOR_BGR2RGB)
+            # البحث عن مواقع الوجوه
+            facesLoc = face_recognition.face_locations(frameS)
 
-                # resize and convert the frame to Gray
-                frameS = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
-                frameS = cv2.cvtColor(frameS, cv2.COLOR_BGR2RGB)
-                # finding list of face locations
-                facesLoc = face_recognition.face_locations(frameS)
-                # if more than 1 person is in frame then don't consider
-                if len(facesLoc) > 1:
-                    cv2.putText(frame, "Only one person allowed", (100, 150),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-                    flag = False
-                    continue
+            # إذا لم يتم العثور على وجه، لا تقم بالتقاط الصورة
+            if not facesLoc:
+                continue
 
-                for faceLoc in facesLoc:
-                    # analyze the frame and look for emotion attribute and save it in a result
-                    result = DeepFace.analyze(
-                        frame, actions=['emotion'], enforce_detection=False)
-                    # face locations
-                    y1, x2, y2, x1 = faceLoc
-                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                    # if the smotion is happy, start numbering and check same for 3 upcoming frames
-                    if result and timeit.default_timer() - start > 5:
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        if flag:
-                            cv2.putText(frame, str(num), (150, 200), cv2.FONT_HERSHEY_SIMPLEX, 6, (255, 255, 255), 20)
-                            time.sleep(1)
-                            num = num - 1
-
-                        else:
-                            flag = True
-                            num = 3
-                    else:
-                        flag = False
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
+            if num == 0:
+                # إذا تم الانتهاء من الترقيم لالتقاط الصورة، قم بإطلاق الكاميرا وحفظ الصورة
+                global pic
+                pic = frame
                 ret, buffer = cv2.imencode('.jpg', frame)
                 frame = buffer.tobytes()
-                # pass the frame to show on html page
+                # playsound("static/cameraSound.wav")
                 yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                cap2.release()
+                break
+
+            # إذا كان هناك أكثر من شخص في الإطار، فلا تنظر إلى ذلك
+            if len(facesLoc) > 1:
+                cv2.putText(frame, "Only one person allowed", (100, 150),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                flag = False
+                continue
+
+            for faceLoc in facesLoc:
+                # analyze the frame and look for emotion attribute and save it in a result
+                result = DeepFace.analyze(
+                    frame, actions=['emotion'], enforce_detection=False)
+                # face locations
+                y1, x2, y2, x1 = faceLoc
+                y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                # if the smotion is happy, start numbering and check same for 3 upcoming frames
+                if result and timeit.default_timer() - start > 5:
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    if flag:
+                        cv2.putText(frame, str(num), (150, 200), cv2.FONT_HERSHEY_SIMPLEX, 6, (255, 255, 255), 20)
+                        time.sleep(1)
+                        num = num - 1
+                    else:
+                        flag = True
+                        num = 3
+                else:
+                    flag = False
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            # pass the frame to show on html page
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 # تمرير الإطارات المولدة إلى صفحة HTML
 @app.route('/takePhoto', methods=['GET', 'POST'])
 def takePhoto():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # بدء الكاميرا
     global cap2
     cap2 = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
@@ -433,8 +439,8 @@ def takePhoto():
 @app.route("/encode")
 @login_required
 def encode():
-    images = []
-    myList = os.listdir(path)
+    images=[]
+    myList= os.listdir(path)
 
     global encodedList
     global imgNames
@@ -467,9 +473,9 @@ def encode():
 
 # إنشاء إطارات للمعرف
 def gen_frames():
+    global encodedList
     oldIds = []
-    camera = cv2.VideoCapture(0)
-
+    cap = cv2.VideoCapture(0)
     # دالة لتسجيل الحضور
     def markEntry(id):
         with app.app_context():
@@ -499,6 +505,7 @@ def gen_frames():
             # تغيير حجم وتحويل الإطار إلى RGB
             imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
             imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+
             # وضع التاريخ على الإطار
             cv2.putText(img, datetime.now().strftime("%D %H:%M:%S"), (10, 15), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1,
                         (0, 0, 255), 1)
@@ -569,6 +576,10 @@ def video():
 @app.route("/AttendanceSheet")
 @login_required
 def AttendanceSheet():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
     rows = []
     # فتح ملف السجلات وقراءة البيانات منه
     with open('static/records.csv') as f:
@@ -583,6 +594,11 @@ def AttendanceSheet():
 # تنزيل جميع السجلات (مدمجة لجميع التواريخ)
 @app.route("/downloadAll")
 def downloadAll():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # إرسال ملف السجلات كتنزيل مضغوط
     return send_file('static/records.csv', as_attachment=True)
 
@@ -590,10 +606,15 @@ def downloadAll():
 # تنزيل سجلات الحضور لليوم فقط
 @app.route("/downloadToday")
 def downloadToday():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # استخراج سجلات اليوم فقط وتصديرها إلى ملف CSV
-    df = pd.read_csv("static/records.csv", encoding="utf-8")
+    df = pd.read_csv("static/records.csv", encoding='ISO-8859-1')
     df = df[df['Date'] == datetime.now().strftime("%d-%m-%Y")]
-    df.to_csv("static/todayAttendance.csv", index=False)
+    df.to_csv("static/todayAttendance.csv", index=False, encoding='ISO-8859-1')
     # إرسال ملف الحضور لليوم كتنزيل مضغوط
     return send_file('static/todayAttendance.csv', as_attachment=True)
 
@@ -602,8 +623,13 @@ def downloadToday():
 @app.route("/resetToday")
 @login_required
 def resetToday():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # قراءة ملف السجلات وإزالة الحضور لليوم الحالي
-    df = pd.read_csv("static/records.csv", encoding='utf-8')
+    df = pd.read_csv("static/records.csv", encoding='ISO-8859-1')
     df = df[df['Date'] != datetime.now().strftime("%d-%m-%Y")]
     df.to_csv("static/records.csv", index=False)
     # إعادة توجيه المستخدم إلى صفحة سجلات الحضور
@@ -614,8 +640,13 @@ def resetToday():
 @app.route("/stats")
 @login_required
 def stats():
+    if current_user.role == 'user':
+        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
+        # إعادة توجيه المستخدمين بدور 'user' إلى صفحة أخرى
+        return redirect(url_for('index'))
+
     # جلب البيانات من ملف csv للحضور وقاعدة بيانات الموظفين
-    df = pd.read_csv("static/records.csv", encoding="utf-8")
+    df = pd.read_csv("static/records.csv", encoding='ISO-8859-1')
     rows = employee.query.all()
     db = [str(row) for row in rows]
     db = pd.DataFrame(db)
@@ -634,9 +665,7 @@ def stats():
 
     # حضور اليوم حسب القسم
     fig1 = px.bar(attendance, x=attendance.index, y=attendance.columns, barmode='group',
-                  labels={'value': 'عدد السجناء '},
-                  title='قسم الحضور  اليوم', color_discrete_sequence=px.colors.qualitative.T10,
-                  template='presentation')
+                  labels={'value': 'عدد السجناء '},title='قسم الحضور  اليوم', color_discrete_sequence=px.colors.qualitative.T10,template='presentation')
 
     # حضور القسم بالنسبة المئوية والعدد
     fig2 = []
@@ -665,10 +694,7 @@ def stats():
 
     # إرسال البيانات إلى صفحة HTML
     return render_template('statsPage.html', JSON1=JSON1, JSON2=JSON2, JSON3=JSON3,
-                           depts=db['Department'].unique(),
-                           td=[sum(attendance['Registered']), sum(attendance['Present'])],
-                           titles=db.columns.values,
-                           data=list(db.sort_values(by='Attendance(%)', ascending=False, kind="mergesort").values.tolist()), len=len)
+    depts=db['Department'].unique(),td=[sum(attendance['Registered']), sum(attendance['Present'])],titles=db.columns.values,data=list(db.sort_values(by='Attendance(%)', ascending=False, kind="mergesort").values.tolist()), len=len)
 
 
 bot_responses = {}
@@ -676,13 +702,10 @@ bot_responses = {}
 
 @app.route('/get')
 def get_bot_response():
-    # استلام نص الرسالة من المستخدم عبر الطلب
-    userText = request.args.get('msg')
 
+    userText = request.args.get('msg')
     # جلب الإجابة المتناسبة مع السؤال المعطى، bot_responses هو متغير عالمي تم تعريفه في مسار helpBot
     bot_response = bot_responses.get(userText, "اعتذر لم استطع فهمك :(")
-
-    # إرجاع الرد من الروبوت
     return bot_response
 
 
@@ -692,8 +715,6 @@ def helpBot():
     global bot_responses
     with open('static/help.json', encoding='utf-8') as f:
         bot_responses = json.load(f)
-
-    # إعادة عرض قالب صفحة HTML لخدمة الدردشة وعرض مفاتيح bot_responses
     return render_template('chatBot.html', keys=[*bot_responses])
 
 
@@ -701,4 +722,5 @@ def helpBot():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+
 
