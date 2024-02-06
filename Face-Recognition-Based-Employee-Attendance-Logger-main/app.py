@@ -29,12 +29,19 @@ from PIL import ImageFont, Image, ImageDraw  # استيراد مكتبة PIL ل�
 # مكتبات مساعدة إضافية
 from random import randint  # استيراد وحدة randint من مكتبة random لإنشاء أرقام عشوائية
 
+# استيراد auth Blueprint
+from auth import auth as auth_blueprint
 from chatbot import setup_routes as chatbot_routes
 from AttendanceSheet import setup_attendance_routes as attendance_routes
+from config import Config
+
+
 app = Flask(__name__)
+app.config.from_object(Config)
 chatbot_routes(app)
 # ربط مراجعات AttendanceSheet بالتطبيق
 attendance_routes(app)
+app.register_blueprint(auth_blueprint)
 # configurations for database and mail
 # إعدادات لقاعدة البيانات والبريد الإلكتروني
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///EmployeeDB.db"  # تحديد موقع قاعدة البيانات ونوعها (SQLite في هذه الحالة)
@@ -143,51 +150,8 @@ def verifyOTP():
             return render_template('OTP.html', incorrect=True)
     return render_template('OTP.html')
 # هذا المسار يتعامل مع خروج المستخدم. يتطلب من المستخدم أن يكون قد قام بتسجيل الدخول.
-@app.route('/logout', methods=['GET', 'POST'])
-@login_required
-def logout():
-    # قم بتسجيل خروج المستخدم وإعادة توجيهه إلى الصفحة الرئيسية
-    logout_user()
-    return redirect('/')
-# تسجيل المستخدم
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.role != 'admin':
-        flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
-        # إعادة توجيه المستخدمين الذين ليسوا أدمن
-        return redirect(url_for('index'))
-    if request.method == 'POST':
-        # استرجاع بيانات التسجيل من إرسال النموذج
-        id = request.form['id']
-        username = request.form['username']
-        name = request.form['name']
-        mail = request.form['mail']
-        pass1 = request.form['pass']
-        pass2 = request.form['pass2']
-        # التحقق من فرادة معرف المالك واسم المستخدم
-        user = users.query.filter_by(username=username).first()
-        user2 = users.query.filter_by(id=id).first()
-        # إذا لم تكن فريدة أو لم تتطابق كلمات المرور، عد إلى صفحة التسجيل مع رسالة توضيحية، وإلا قم بتسجيل المستخدم
-        if user is not None or user2 is not None:
-            return render_template('signup.html', incorrect=True,msg='المستخدم بنفس المعرف أو اسم المستخدم موجود بالفعل')
-        elif pass1 != pass2:
-            return render_template('signup.html', incorrect=True, msg="كلمة المرور غير مطابقة")
-        else:
-            # إنشاء مستخدم جديد وإضافته إلى قاعدة البيانات
-            new_user = users(id=id, name=name, mail=mail, username=username, password=pass1)
-            db.session.add(new_user)
-            db.session.commit()
-            # إرسال بريد إلكتروني للمستخدم بعد التسجيل الناجح
-            msg = f'''مرحبًا {new_user.name}
-لقد تم إنشاء حساب جديد
-شكرًا لك.
-'''
-            sendResetMail(new_user.mail, msg)
-            # إعادة توجيه المستخدم إلى صفحة تسجيل الدخول بعد التسجيل الناجح
-            return render_template('login.html', registered=True)
-    # إذا كانت طريقة الطلب هي GET، عرض صفحة التسجيل
-    return render_template('signup.html')
-# إضافة موظف جديد إلى قاعدة بيانات الموظفين
+
+
 @app.route("/add", methods=['GET', 'POST'])
 @login_required
 def add():
@@ -527,3 +491,4 @@ def stats():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        
