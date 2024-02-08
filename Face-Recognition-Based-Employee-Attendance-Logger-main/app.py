@@ -33,7 +33,8 @@ from random import randint  # استيراد وحدة randint من مكتبة ra
 from auth import auth as auth_blueprint
 from chatbot import setup_routes as chatbot_routes
 from AttendanceSheet import setup_attendance_routes as attendance_routes
-from config import Config
+from database import Config
+from admin import admin_bp
 
 
 app = Flask(__name__)
@@ -43,10 +44,8 @@ chatbot_routes(app)
 attendance_routes(app)
 app.register_blueprint(auth_blueprint)
 # configurations for database and mail
-# إعدادات لقاعدة البيانات والبريد الإلكتروني
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///EmployeeDB.db"  # تحديد موقع قاعدة البيانات ونوعها (SQLite في هذه الحالة)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # تعطيل تتبع التعديلات لتجنب إشعارات غير ضرورية
-app.config['SECRET_KEY'] = 'mysecretkey'  # تعيين مفتاح سري لتوقيع الجلسات في التطبيق
+app.register_blueprint(admin_bp, url_prefix='/admin')
+
 db = SQLAlchemy(app)  # إعداد كائن قاعدة البيانات باستخدام Flask-SQLAlchemy
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # تحديد خادم البريد الإلكتروني
 app.config['MAIL_PORT'] = 587  # تحديد منفذ البريد الإلكتروني
@@ -92,12 +91,7 @@ class users(db.Model, UserMixin):
     def __repr__(self):
         return '<User {}>'.format(self.username)
 # الكود التالي يعرف مسارات ووظائف في تطبيق ويب Flask:
-@app.route('/admin-only')
-@login_required
-def admin_only_route():
-    if current_user.role != 'admin':
-        # إعادة توجيه المستخدمين غير الأدمن إلى صفحة أخرى أو عرض رسالة خطأ
-        return redirect(url_for('index'))
+
 # هذا المسار يتعامل مع الصفحة الرئيسية للتطبيق.
 @app.route('/')
 def index():
@@ -488,7 +482,5 @@ def stats():
     return render_template('statsPage.html', JSON1=JSON1, JSON2=JSON2, JSON3=JSON3,
     depts=db['Department'].unique(),td=[sum(attendance['Registered']), sum(attendance['Present'])],titles=db.columns.values,data=list(db.sort_values(by='Attendance(%)', ascending=False, kind="mergesort").values.tolist()), len=len)
 # قاعدة البيانات
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-        
+def create_app():
+    return app
