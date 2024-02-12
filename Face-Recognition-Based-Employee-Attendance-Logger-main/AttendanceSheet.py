@@ -41,7 +41,7 @@ def setup_attendance_routes(app):
             flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
             return redirect(url_for('index'))
         rows = []
-        with open('static/records.csv') as f:
+        with open('static/todayAttendance.csv') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 rows.append(dict(row))
@@ -49,12 +49,19 @@ def setup_attendance_routes(app):
         return render_template('RecordsPage.html', allrows=rows, fieldnames=fieldnames, len=len)
 
     # تنزيل جميع السجلات (مدمجة لجميع التواريخ)
+    @app.route("/resetToday")
+    @login_required
+    def resetToday():
+        df = pd.read_csv('static/records.csv')
+        df = df[df['Date'] != datetime.now().strftime("%d-%m-%Y")]
+        df.to_csv("static/records.csv", index=False)
+        return redirect('/AttendanceSheet')
     @app.route("/downloadAll")
     def downloadAll():
         if current_user.role == 'user':
             flash('ليس لديك صلاحية الوصول إلى هذه الصفحة.', 'warning')
             return redirect(url_for('index'))
-        return send_file('static/records.csv', as_attachment=True)
+        return send_file('static/todayAttendance.csv', as_attachment=True)
 
     # تنزيل سجلات الحضور لليوم فقط
     @app.route("/downloadToday")
