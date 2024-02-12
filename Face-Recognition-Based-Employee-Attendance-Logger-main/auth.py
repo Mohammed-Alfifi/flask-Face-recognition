@@ -1,12 +1,12 @@
 from flask import Blueprint, redirect
 from flask_login import login_required, logout_user
 
-# ÅäÔÇÁ Blueprint
+# Ø¥Ù†Ø´Ø§Ø¡ Blueprint
 auth = Blueprint('auth', __name__)
 
-# ÊÚÑíİ ØÑíŞ ÇáÎÑæÌ
+# ØªØ¹Ø±ÙŠÙ Ø·Ø±ÙŠÙ‚ Ø§Ù„Ø®Ø±ÙˆØ¬
 @auth.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
-    logout_user()  # Şã ÈÊÓÌíá ÎÑæÌ ÇáãÓÊÎÏã
-    return redirect('/')  # ÅÚÇÏÉ ÊæÌíå ÇáãÓÊÎÏã Åáì ÇáÕİÍÉ ÇáÑÆíÓíÉ
+    logout_user()  # Ù‚Ù… Ø¨ØªØ³Ø¬ÙŠÙ„ Ø®Ø±ÙˆØ¬ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…
+    return redirect('/')  # Ø¥Ø¹Ø§Ø¯Ø© ØªÙˆØ¬ÙŠÙ‡ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… Ø¥Ù„Ù‰ Ø§Ù„ØµÙØ­Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©
