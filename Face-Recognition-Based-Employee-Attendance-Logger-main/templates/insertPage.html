@@ -44,7 +44,7 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
                 <li>
-                    <h6 style="color: white;">نضام تسجيل الحضور</h6>
+                    <h6 style="color: white;">نضام تسجيل الحضور في السجون</h6>
                 </li>
             </ul>
             <div class="form-inline my-2 my-lg-0">
@@ -143,7 +143,7 @@
                     var text = document.createElement("p");
                     text.setAttribute("id", "camInstructions");
                     document.getElementById("img").appendChild(text);
-                    document.getElementById("camInstructions").innerHTML = "Just give a bright smile :) to get your picture captured <br> Make sure to capture in bright lighting conditions";
+                    document.getElementById("camInstructions").innerHTML = "فقط  انظر الى الكامرة :) لتلتقط صورتك <br> تأكد من الالتقاط في ظروف الإضاءة الساطعة";
                     var ele = document.createElement("img");
                     ele.setAttribute("src", "{{ url_for('takePhoto') }}");
                     ele.setAttribute("class", "img-fluid img-thumbnail");
