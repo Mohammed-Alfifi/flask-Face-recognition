@@ -6,9 +6,6 @@ from flask import request, render_template
 import json
 
 def setup_routes(app):
-
-    bot_responses = {}
-
     @app.route('/get')
     def get_bot_response():
         userText = request.args.get('msg')
@@ -17,7 +14,8 @@ def setup_routes(app):
 
     @app.route('/helpBot')
     def helpBot():
+        # load json file globally
         global bot_responses
-        with open('static/help.json', encoding='utf-8') as f:
+        with open('static/help.json', encoding = 'utf-8') as f:
             bot_responses = json.load(f)
         return render_template('chatBot.html', keys=[*bot_responses])
