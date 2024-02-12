@@ -355,7 +355,7 @@ def gen_frames():
     # دالة لتسجيل الحضور
     def markEntry(id):
         with app.app_context():
-            with open('static/records.csv', 'r+') as f:
+            with open('static/todayAttendance.csv', 'r+') as f:
                 # استخراج الحضور لليوم الحالي
                 myDataList = [
                     line for line in f if datetime.now().strftime('%d-%m-%Y') in line]
