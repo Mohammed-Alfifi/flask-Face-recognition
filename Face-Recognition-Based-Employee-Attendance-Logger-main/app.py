@@ -51,7 +51,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # تحديد خادم البريد
 app.config['MAIL_PORT'] = 587  # تحديد منفذ البريد الإلكتروني
 app.config['MAIL_USE_TLS'] = True  # تمكين استخدام TLS لتشفير الاتصال
 app.config['MAIL_USERNAME'] = 'alfifi115@gmail.com'  # اسم مستخدم البريد الإلكتروني
-app.config['MAIL_PASSWORD'] = 'tebx okao jwft qlic'  # كلمة مرور البريد الإلكتروني
+app.config['MAIL_PASSWORD'] = 'lic'  # كلمة مرور البريد الإلكتروني
 login_manager = LoginManager()  # إعداد كائن لإدارة تسجيل الدخول باستخدام Flask-Login
 login_manager.init_app(app)  # تهيئة التطبيق لاستخدام إدارة تسجيل الدخول
 login_manager.login_view = 'login'  # تحديد عرض تسجيل الدخول
